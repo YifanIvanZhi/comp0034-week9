@@ -1,0 +1,7 @@
+flask
+flask-sqlalchemy
+Flask-WTF
+flask-marshmallow
+marshmallow-sqlalchemy
+scikit-learn
+pandas

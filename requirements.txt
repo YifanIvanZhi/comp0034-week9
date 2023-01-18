@@ -3,5 +3,9 @@ flask-sqlalchemy
 Flask-WTF
 flask-marshmallow
 marshmallow-sqlalchemy
-scikit-learn
-pandas
+pytest
+selenium
+numpy
+requests
+# scikit-learn
+# pandas

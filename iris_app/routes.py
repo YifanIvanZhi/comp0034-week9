@@ -1,10 +1,11 @@
 from pathlib import Path
 import pickle
-from flask import render_template, current_app, request
+from flask import render_template, current_app as app, request
 import numpy as np
-from iris_app.forms import PredictionForm
+from iris_app.forms import PredictionForm, UserForm
+from iris_app import db
+from iris_app.models import Iris, User
 
-app = current_app
 
 pickle_file = Path(__file__).parent.joinpath("data", "model_lr.pkl")
 IRIS_MODEL = pickle.load(open(pickle_file, "rb"))
@@ -80,3 +81,24 @@ def make_prediction(flower_values):
     variety = np.vectorize(varieties.__getitem__)(prediction[0])
 
     return variety
+
+
+@app.route("/iris")
+def iris_list():
+    """Render page with a list of all the iris entries from the database"""
+    iris = db.session.execute(db.select(Iris)).scalars()
+    return render_template("iris.html", iris_list=iris)
+
+
+@app.route("/register", methods=["GET", "POST"])
+def register():
+    form = UserForm()
+    if form.validate_on_submit():
+        email = request.form.get("email")
+        password = request.form.get("password")
+        new_user = User(email=email, password=password)
+        db.session.add(new_user)
+        db.session.commit()
+        text = f"<p>You are registered! {repr(new_user)}</p>"
+        return text
+    return render_template("register.html", form=form)

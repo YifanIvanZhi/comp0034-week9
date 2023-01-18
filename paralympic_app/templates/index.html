@@ -1,18 +1,14 @@
-<!DOCTYPE html>
-<html lang="en">
+{% extends 'layout.html' %}
+{% set title = 'Paralympics Home' %}
+{% block content %}
 
-<head>
-    <meta charset="utf-8">
-    <title>Paralympics</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" type="text/css" href="../static/css/bootstrap.css">
-</head>
+<h1>Paralympic events</h1>
+<p>We have data for the following events</p>
+<ul>
+    {% for event in event_list %}
+    <li>{{ event['location'] }} {{ event['year'] }} ({{ event['type'] }})</li>
+    {% endfor %}
+</ul>
 
-<body>
-    <div class="container">
-        <p>Hello, World! (paralympics)</p>
-    </div>
-    <script src="../static/js/bootstrap.bundle.js"></script>
-</body>
 
-</html>
+{% endblock %}

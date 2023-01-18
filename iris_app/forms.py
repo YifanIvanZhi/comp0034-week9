@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import DecimalField
+from wtforms import DecimalField, StringField, EmailField
 from wtforms.validators import DataRequired
 
 
@@ -11,3 +11,10 @@ class PredictionForm(FlaskForm):
     sepal_width = DecimalField(validators=[DataRequired()])
     petal_length = DecimalField(validators=[DataRequired()])
     petal_width = DecimalField(validators=[DataRequired()])
+
+
+class UserForm(FlaskForm):
+    """Fields to a form to input the values required for adding a new user account"""
+
+    email = EmailField("email", validators=[DataRequired()])
+    password = StringField("password", validators=[DataRequired()])

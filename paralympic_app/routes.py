@@ -1,3 +1,4 @@
+import requests
 from flask import (
     render_template,
     current_app as app,
@@ -27,7 +28,9 @@ event_schema = EventSchema()
 @app.route("/")
 def index():
     """Returns the home page"""
-    return render_template("index.html")
+    url = "http://127.0.0.1:5000/event"
+    response = requests.get(url).json()
+    return render_template("index.html", event_list=response)
 
 
 @app.get("/noc")
@@ -39,7 +42,7 @@ def noc():
     all_regions = db.session.execute(db.select(Region)).scalars()
     # Get the data using Marshmallow schema
     result = regions_schema.dump(all_regions)
-    return jsonify(result)
+    return result
 
 
 @app.get("/noc/<code>")
@@ -152,8 +155,6 @@ def event_add():
     )
     db.session.add(event)
     db.session.commit()
-    # TODO: find the id  of the last record and then query the database as we need the id
-    print(event.event_id, file=sys.stderr)
     result = event_schema.jsonify(event)
     return result
 

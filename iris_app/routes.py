@@ -29,7 +29,7 @@ def index():
         # Make the prediction
         prediction = make_prediction(features_from_form)
 
-        prediction_text = f"Predicted Class: {prediction}"
+        prediction_text = f"Predicted Iris type: {prediction}"
 
         return render_template(
             "index.html", form=form, prediction_text=prediction_text

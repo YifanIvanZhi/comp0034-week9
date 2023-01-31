@@ -1,4 +1,4 @@
-import requests
+import json
 from flask import (
     render_template,
     current_app as app,
@@ -28,21 +28,37 @@ event_schema = EventSchema()
 @app.route("/")
 def index():
     """Returns the home page"""
-    url = "http://127.0.0.1:5000/event"
-    response = requests.get(url).json()
+    # The following version using a url isn't supported by the flask test client, use selenium to test it
+    # url = "http://127.0.0.1:5001/event"
+    # response = requests.get(url).json()
+
+    # This version doesn't require a call to another URL so should work with the test client
+    response = get_events()
     return render_template("index.html", event_list=response)
+
+
+@app.route("/display_event/<event_id>")
+def display_event(event_id):
+    """Returns the event detail page"""
+    ev = get_event(event_id)
+    return render_template("event.html", event=ev)
 
 
 @app.get("/noc")
 def noc():
-    """Returns a list of NOC region codes and their details in JSON."""
+    """Returns a response that conatins a list of NOC region codes and their details in JSON.
+
+    A success response status code is 200 OK.
+    """
 
     # Query using the syntax in the Flask-SQLAlchemy 3.x documentation
     # https://flask-sqlalchemy.palletsprojects.com/en/3.0.x/queries/#select
     all_regions = db.session.execute(db.select(Region)).scalars()
     # Get the data using Marshmallow schema
     result = regions_schema.dump(all_regions)
-    return result
+    response = make_response(result, 200)
+    response.headers["Content-Type"] = "application/json"
+    return response
 
 
 @app.get("/noc/<code>")
@@ -51,7 +67,9 @@ def noc_code(code):
     # Return a 404 code if the region is not found in the database
     region = db.one_or_404(db.select(Region).filter_by(NOC=code))
     result = region_schema.dump(region)
-    return jsonify(result)
+    response = make_response(result, 200)
+    response.headers["Content-Type"] = "application/json"
+    return response
 
 
 @app.post("/noc")
@@ -64,7 +82,9 @@ def noc_add():
     db.session.add(region)
     db.session.commit()
     result = region_schema.jsonify(region)
-    return result
+    response = make_response(result, 201)
+    response.headers["Content-type"] = "application/json"
+    return response
 
 
 @app.patch("/noc/<code>")
@@ -82,7 +102,9 @@ def noc_update(code):
     # Return json showing the updated record
     existing_region = db.one_or_404(db.select(Region).filter_by(NOC=code))
     result = region_schema.jsonify(existing_region)
-    return result
+    response = make_response(result, 200)
+    response.headers["Content-Type"] = "application/json"
+    return response
 
 
 @app.delete("/noc/<code>")
@@ -102,17 +124,19 @@ def noc_delete(code):
 @app.get("/event")
 def event():
     """Returns the details for all events"""
-    all_events = db.session.execute(db.select(Event)).scalars()
-    return events_schema.dump(all_events)
+    result = get_events()
+    response = make_response(result, 200)
+    response.headers["Content-Type"] = "application/json"
+    return response
 
 
 @app.get("/event/<int:event_id>")
 def event_id(event_id):
     """Returns the details for a specified event"""
-    event = db.session.execute(
-        db.select(Event).filter_by(event_id=event_id)
-    ).one()
-    return events_schema.dump(event)
+    result = get_event(event_id)
+    response = make_response(result, 200)
+    response.headers["Content-Type"] = "application/json"
+    return response
 
 
 @app.post("/event")
@@ -156,7 +180,9 @@ def event_add():
     db.session.add(event)
     db.session.commit()
     result = event_schema.jsonify(event)
-    return result
+    response = make_response(result, 201)
+    response.headers["Content-Type"] = "application/json"
+    return response
 
 
 @app.patch("/event/<event_id>")
@@ -179,17 +205,24 @@ def event_update(event_id):
         db.select(Event).filter_by(event_id=event_id)
     )
     result = event_schema.jsonify(existing_event)
+    response = make_response(result, 200)
+    response.headers["Content-Type"] = "application/json"
+    return response
+
+
+def get_events():
+    """Function to get all events from the database as objects and convert to json.
+
+    NB: This was extracted to a separate function as it is used in multiple places"""
+    all_events = db.session.execute(db.select(Event)).scalars()
+    event_json = events_schema.dump(all_events)
+    return event_json
+
+
+def get_event(event_id):
+    """Function to get a single event as a json structure"""
+    event = db.session.execute(
+        db.select(Event).filter_by(event_id=event_id)
+    ).one()
+    result = events_schema.dump(event)
     return result
-
-
-from flask import jsonify, make_response
-
-
-@app.route("/user/<username>")
-def get_user(username):
-    user = db.session.execute(
-        db.select(User).filter_by(username=username)
-    ).scalar_one()
-    json = jsonify(user.to_json)
-    headers = {"Content-Type": "application/json"}
-    return make_response(json, 200, headers)

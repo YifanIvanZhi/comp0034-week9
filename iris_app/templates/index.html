@@ -48,10 +48,10 @@
         </ul>
         {% endif %}
     </div>
-    <input type="submit" value="Predict species" class="btn btn-primary">
+    <input id="btn-predict" type="submit" value="Predict species" class="btn btn-primary">
     <br>
 </form>
 <br>
-<p>{{ prediction_text }}</p>
+<p id="prediction-text">{{ prediction_text }}</p>
 
 {% endblock %}

@@ -180,3 +180,16 @@ def event_update(event_id):
     )
     result = event_schema.jsonify(existing_event)
     return result
+
+
+from flask import jsonify, make_response
+
+
+@app.route("/user/<username>")
+def get_user(username):
+    user = db.session.execute(
+        db.select(User).filter_by(username=username)
+    ).scalar_one()
+    json = jsonify(user.to_json)
+    headers = {"Content-Type": "application/json"}
+    return make_response(json, 200, headers)

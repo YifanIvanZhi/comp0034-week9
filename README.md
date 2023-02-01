@@ -10,6 +10,6 @@ If you are creating the machine learning app then you can edit requirements.txt 
 
 ## Week 9 activities
 
-The activities are accessed from [activities/activities.md](/activities/activities.md)
+The activities are accessed from the [activities](/activities) folder.
 
-Completed examples are in the tests folder in <comp0034-week9-complete>
+Completed examples are in the tests folder in <https://github.com/nicholsons/comp0034-week9-complete>

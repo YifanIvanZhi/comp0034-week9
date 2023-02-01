@@ -86,7 +86,7 @@ tests/
 
 Assume that you have a tests directory with two subdirectoris called `tests_paralympics_app` and `tests_iris_app`. Code to run the tests is given below.
 
-The extra flag ignores package deprecation warnings. This is done to reduce the amount of text reported from the texts which hopefully makes it a little easier for you to see the errors that are specific to the test code:
+The extra flag ignores package deprecation warnings. This is done to reduce the amount of text reported from the tests which hopefully makes it a little easier for you to see the errors that are specific to the test code:
 
 `python -m pytest -v tests/tests_paralympic_app/ -W ignore::DeprecationWarning`
 

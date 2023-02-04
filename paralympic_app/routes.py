@@ -1,4 +1,3 @@
-import json
 from flask import (
     render_template,
     current_app as app,
@@ -64,11 +63,22 @@ def noc():
 @app.get("/noc/<code>")
 def noc_code(code):
     """Returns the details for a given region code."""
-    # Return a 404 code if the region is not found in the database
-    region = db.one_or_404(db.select(Region).filter_by(NOC=code))
-    result = region_schema.dump(region)
-    response = make_response(result, 200)
-    response.headers["Content-Type"] = "application/json"
+    region = db.session.execute(
+        db.select(Region).filter_by(NOC=code)
+    ).scalar_one_or_none()
+    if region:
+        result = region_schema.dump(region)
+        response = make_response(result, 200)
+        response.headers["Content-Type"] = "application/json"
+    else:
+        message = jsonify(
+            {
+                "status": 404,
+                "error": "Not found",
+                "message": "Invalid resource URI",
+            }
+        )
+        response = make_response(message, 404)
     return response
 
 
@@ -89,10 +99,14 @@ def noc_add():
 
 @app.patch("/noc/<code>")
 def noc_update(code):
-    """Updates changed fields for the NOC record"""
+    """Updates changed fields for the NOC record
+
+    TODO: Handle 404 error"""
     # https://flask-sqlalchemy.palletsprojects.com/en/3.0.x/queries/#insert-update-delete
     # Find the current region in the database
-    existing_region = db.one_or_404(db.select(Region).filter_by(NOC=code))
+    existing_region = db.session.execute(
+        db.select(Region).filter_by(NOC=code)
+    ).scalar_one_or_none()
     # Get the updated details from the json sent in the HTTP patch request
     region_json = request.get_json()
     # Use Marshmallow to update the existing records with the changes in the json
@@ -100,8 +114,10 @@ def noc_update(code):
     # Commit the changes to the database
     db.session.commit()
     # Return json showing the updated record
-    existing_region = db.one_or_404(db.select(Region).filter_by(NOC=code))
-    result = region_schema.jsonify(existing_region)
+    updated_region = db.session.execute(
+        db.select(Region).filter_by(NOC=code)
+    ).scalar_one_or_none()
+    result = region_schema.jsonify(updated_region)
     response = make_response(result, 200)
     response.headers["Content-Type"] = "application/json"
     return response
@@ -109,8 +125,12 @@ def noc_update(code):
 
 @app.delete("/noc/<code>")
 def noc_delete(code):
-    """Removes a NOC record from the dataset."""
-    region = db.one_or_404(db.select(Region).filter_by(NOC=code))
+    """Removes a NOC record from the dataset.
+
+    TODO: handle 404 error"""
+    region = db.session.execute(
+        db.select(Region).filter_by(NOC=code)
+    ).scalar_one_or_none()
     db.session.delete(region)
     db.session.commit()
     # This example returns a custom HTTP response using flask make_response
@@ -191,9 +211,9 @@ def event_update(event_id):
     TODO: does not handle a partial update despite partial=True
     """
     # Find the current event in the database
-    existing_event = db.one_or_404(
+    existing_event = db.session.execute(
         db.select(Event).filter_by(event_id=event_id)
-    )
+    ).scalar_one_or_none()
     # Get the updated details from the json sent in the HTTP patch request
     event_json = request.get_json()
     # Use Marshmallow to update the existing records with the changes in the json
@@ -201,10 +221,10 @@ def event_update(event_id):
     # Commit the changes to the database
     db.session.commit()
     # Return json showing the updated record
-    existing_event = db.one_or_404(
+    updated_event = db.session.execute(
         db.select(Event).filter_by(event_id=event_id)
-    )
-    result = event_schema.jsonify(existing_event)
+    ).scalar_one_or_none()
+    result = event_schema.jsonify(updated_event)
     response = make_response(result, 200)
     response.headers["Content-Type"] = "application/json"
     return response
@@ -213,16 +233,19 @@ def event_update(event_id):
 def get_events():
     """Function to get all events from the database as objects and convert to json.
 
-    NB: This was extracted to a separate function as it is used in multiple places"""
+    NB: This was extracted to a separate function as it is used in multiple places
+    """
     all_events = db.session.execute(db.select(Event)).scalars()
     event_json = events_schema.dump(all_events)
     return event_json
 
 
 def get_event(event_id):
-    """Function to get a single event as a json structure"""
+    """Function to get a single event as a json structure
+
+    TODO: handle 404 error"""
     event = db.session.execute(
         db.select(Event).filter_by(event_id=event_id)
-    ).one()
+    ).scalar_one_or_none()
     result = events_schema.dump(event)
     return result

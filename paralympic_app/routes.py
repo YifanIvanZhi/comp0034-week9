@@ -1,3 +1,4 @@
+import sys, json
 from flask import (
     render_template,
     current_app as app,
@@ -38,7 +39,10 @@ def index():
 
 @app.route("/display_event/<event_id>")
 def display_event(event_id):
-    """Returns the event detail page"""
+    """Returns the event detail page
+
+    Created to demonstrate using the json data in a page.
+    """
     ev = get_event(event_id)
     return render_template("event.html", event=ev)
 
@@ -247,5 +251,5 @@ def get_event(event_id):
     event = db.session.execute(
         db.select(Event).filter_by(event_id=event_id)
     ).scalar_one_or_none()
-    result = events_schema.dump(event)
+    result = event_schema.dump(event)
     return result

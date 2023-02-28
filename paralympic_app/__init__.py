@@ -13,23 +13,19 @@ db = SQLAlchemy()
 ma = Marshmallow()
 
 
-def create_app():
+def create_app(config_object):
     """Create and configure the Flask app"""
     app = Flask(__name__)
-    app.config["SECRET_KEY"] = "YY3R4fQ5OmlmVKOSlsVHew"
-    # configure the SQLite database location
-    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///" + str(
-        PROJECT_ROOT.joinpath("data", "paralympics.db")
-    )
-    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-    app.config["SQLALCHEMY_ECHO"] = True
+    # See config parameters in config.py
+    app.config.from_object(config_object)
 
     # Uses a helper function to initialise extensions
     initialize_extensions(app)
 
     # Include the routes from routes.py
     with app.app_context():
-        from . import routes
+        from paralympic_app import routes
+        from paralympic_app.models import Event, Region
 
     return app
 

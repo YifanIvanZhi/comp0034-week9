@@ -12,9 +12,11 @@ You may need to refer to COMP0035 or [COMP0034 week 4 activities](https://github
 4. Install the paralympics and iris app using `pip install -e .`
 5. Set-up a GitHub Actions workflow for continuous integration
 
+> **IMPORTANT**: Windows users, please `pip uninstall pytest-flask` as the `live_server` fixture will not work on Windows.
+
 Check you can run the apps:
 
-`python -m flask --app 'paralympic_app:create_app()' --debug run`
+`python -m flask --app 'paralympic_app:create_app("paralympic_app.config.DevConfig")' --debug run`
 
 `python -m flask --app 'iris_app:create_app()' --debug run`
 
@@ -102,7 +104,7 @@ You will see different names for tests, but generally the types we are concerned
 
 You should already be able to write Pytest tests. These can be used to write unit tests for the database model classes or other utility functions (i.e NOT routes) in your application.
 
-This was covered in COMP0035 and is not covered again here, though there are some examples in [week 10 tests](https://github.com/nicholsons/comp0034-week10/tree/master/tests) directories for model classes if you wish to have a look.
+This was covered in COMP0035 and is not covered again here, though there are a few examples in [week 9 complete tests](https://github.com/nicholsons/comp0034-week9-complete/tree/master/tests/tests_paralympic_app) directories for model classes if you wish to have a look.
 
 ## Activity files
 

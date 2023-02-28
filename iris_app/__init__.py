@@ -10,16 +10,18 @@ PROJECT_ROOT = Path(__file__).parent
 db = SQLAlchemy()
 
 
-def create_app():
-    """Create and configure the Flask app"""
+def create_app(config_object):
+    """Create and configure the Flask app
+
+    Args:
+    config_object: configuration class (see config.py)
+
+    Returns:
+    Configured Flask app
+
+    """
     app = Flask(__name__)
-    app.config["SECRET_KEY"] = "saULPgD9XU8vzLVk7kyLBw"
-    # configure the SQLite database location
-    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///" + str(
-        PROJECT_ROOT.joinpath("data", "iris.db")
-    )
-    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-    app.config["SQLALCHEMY_ECHO"] = True
+    app.config.from_object(config_object)
 
     # Bind the Flask-SQLAlchemy instance to the Flask app
     db.init_app(app)

@@ -32,7 +32,7 @@ You need two fixtures: (1) to start a live server; and (2) to configure the chro
 
 Add these to your `conftest.py`.
 
-Note: the week 10 code contains multiple `conftest.py` files to separate the fixtures for each app.
+Note: the `week-9-complete` repo code contains multiple `conftest.py` files to separate the fixtures for each app.
 
 ###  Fixture to configure the Chrome driver
 
@@ -58,15 +58,28 @@ def chrome_driver():
 
 ### Fixture to create a live server
 
-While you have a fixture for running the Flask app with a test client for the routes; this won't work for running the tests for Selenium. The Selenium tests assume that the app is running on a live server (which yours is not); this means that you need to run the app and run the test code in parallel. To do this you start the server in a new 'thread' for which you can use a package called 'multiprocessing' (other options exist).
+While you have a fixture for running the Flask app with a test client for the routes; this won't work for running the tests for Selenium. The Selenium tests assume that the app is running on a live server (which yours is not); this means that you need to run the app and run the test code in parallel. To do this you start the server in a new 'thread'.
 
-The following fixture runs the app in a thread. The code assumes you have a fixture to create the app which is called `app`, if yours is named something else then change the the code below from `app` to the name of your fixture:
+For MacOS you can use a standard Python package called 'multiprocessing' (other options exist).
+
+For Windows you will need to use a standard package called 'subprocess' as the multiprocessing fork method appears not be to be supported. To start Flask using this method you will also need to modify the `__init__.py create_app()` function to take config from a file or class. In the code you will see that the method now uses classes defined in `config.py`.
+
+The following fixtures run the app in a thread.
+
+#### macOS fixtures
 
 ```python
+@pytest.fixture(scope="session")
+def app():
+    """Create a Flask app configured for testing"""
+    app = create_app(config.TestConfig)
+    yield app
+
+
 @pytest.fixture(scope='module')
 def run_app(app):
     """
-    Fixture to run the Flask app for Selenium tests
+    Runs the Flask app as a live server for Selenium tests on MacOS
     """
     multiprocessing.set_start_method("fork")  # Fork needed in Python 3.8 and later
     process = multiprocessing.Process(target=app.run, args=())
@@ -75,7 +88,32 @@ def run_app(app):
     process.terminate()
 ```
 
-Note that `multiprocessing.set_start_method()` can only be run once per session otherwise you will get a runtime error. In the week 10 code you will see an additional fixture to handle this as there are tests for several apps that could potentially call the method twice. This is unlikely to be an issue for you in your coursework though. The week 10 version has the following fixture:
+#### Windows fixture
+
+```python
+@pytest.fixture(scope="module", autouse=True)
+def run_app():
+    """
+    Runs the Flask app as a live server for Selenuin tests on Windows (Paralympic app)
+    """
+    server = subprocess.Popen(
+        [
+            "flask",
+            "--app",
+            "paralympic_app:create_app('paralympic_app.config.TestConfig')",
+            "run",
+            "--port",
+            "5000"
+        ]
+    )
+    try:
+        yield server
+    finally:
+        server.terminate()
+
+```
+
+Note that `multiprocessing.set_start_method()` for macOS can only be run once per session otherwise you will get a runtime error. In the week 10 code you will see an additional fixture to handle this as there are tests for several apps that could potentially call the method twice. This is unlikely to be an issue for you in your coursework though. The `week 9 complete` version has the following fixture:
 
 ```python
 import pytest
@@ -96,16 +134,17 @@ def init_multiprocessing():
         pass
 ```
 
-The use of multiprocessing to start the app for testing is not clearly documented anywhere. Much of the information is in forum posts and contained in the code for other packages.
+The use of multiprocessing or subprocess to start the app for testing is not clearly documented anywhere. Much of the information is in forum posts and contained in the code for other packages.
 
-To avoid handling the running of the app as a live server yourself, you can use a package such as `pytest-flask`. This provides a [live_server fixture for Selenium tests](https://pytest-flask.readthedocs.io/en/latest/features.html#live-server-application-live-server). Install it as you would for any other package, e.g. `pip install pytest-flask`. The fixture will automatically be available to you once this is installed.
+**pytest-flask liver_server fixture alternative for macOS (not Windows)**: To avoid handling the running of the app as a live server yourself, you can use a package such as `pytest-flask`. This provides a [live_server fixture for Selenium tests](https://pytest-flask.readthedocs.io/en/latest/features.html#live-server-application-live-server). Install it as you would for any other package, e.g. `pip install pytest-flask`. The fixture will automatically be available to you once this is installed.
 
 I encountered the following with pytest-flask:
 
+- Do not use on Windows as the live_server fixture in pytest-flask uses multiprocessing!
 - Make sure you have a fixture called `app` (not any other name) that runs your app code and that it has session scope i.e. `scope="session"`.
 - Check that your `test_client` fixture is not called `client`; as pytest-flask includes a fixture with this name and it wasn't clear how to control which version of the `client` fixture is used.
 
-**In the week 10 code, the tests for the paralympics app uses the `run_app` fixture approach; the tests for the iris app use the pytest-flask live_server fixture approach.**. This is to give an illustration of using both approaches. Use either for your coursework.
+**In the week-9-complete code, the tests for the paralympics app uses the `run_app` fixture approach; the tests for the iris app use the pytest-flask live_server fixture approach.**. This is to give an illustration of using both approaches. Use either for your coursework.
 
 ## Selenium tests for the paralympic app
 
@@ -114,7 +153,7 @@ A REST API does not have a web browser user interface. To allow tests to be crea
 - '/' generates a page with hyperlinks for each event in the dataset
 = '/display_event/<event_id>' generates a page with the event details for a particular event
 
-Run the app so you can see what is in the interface: `python -m flask --app 'paralympic_app:create_app()' --debug run`
+Run the app so you can see what is in the interface: `python -m flask --app 'paralympic_app:create_app("paralympic_app.config.DevConfig")' --debug run`
 
 The code approach to create a Selenium test is broadly:
 
@@ -193,7 +232,7 @@ def test_home_nav_link_returns_home(chrome_driver, run_app):
 
 Run the app so you can see what is in the interface.
 
-`python -m flask --app 'iris_app:create_app()' --debug run`
+`python -m flask --app 'iris_app:create_app("iris_app.config.DevConfig")' --debug run`
 
 Read the section on [selenium tests for the paralympic app](#selenium-tests-for-the-paralympic-app) for a general overview of the code approach for selenium webdriver tests.
 

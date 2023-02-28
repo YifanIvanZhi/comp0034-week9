@@ -50,6 +50,7 @@ def chrome_driver():
     """
     options = ChromeOptions()
     #options.add_argument("--headless")
+    options.add_argument("--window-size=1920,1080")
     driver = Chrome(options=options)
     driver.maximize_window()
     yield driver

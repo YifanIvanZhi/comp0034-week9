@@ -43,17 +43,20 @@ The Flask documentation recommends that you [create fixtures](https://flask.pall
 
 Their code has been slightly modified in the version below to include [Patrick Kennedy's version of the test client](https://gitlab.com/patkennedy79/flask_user_management_example/-/blob/main/tests/conftest.py). He yields the test_client with an application context so you don't have to explicitly use create the context in tests.
 
-I have kept the fixtures as two rather than merging into the one used by Patrick. This is in case students later wish to use pytest-flask live_server for the Selenium tests as this requires that their be a fixture named `app` that create the Flask app.
+I have kept the fixtures as two rather than merging into the one used by Patrick. This is in case students later wish to use pytest-flask live_server for the Selenium tests as this requires that their be a fixture named `app` that create the Flask app. **Note**: do not use pytest-flask live_server if you use Windows.
 
 A number of config parameters are also set:
 
 - `"SQLALCHEMY_ECHO": True` prints all SQL statement to the terminal. The SQL is generated from the Flask-SQLAlchemy query syntax. This can be useful if you need to debug queries.
 - `"WTF_CSRF_ENABLED": False` prevents forms with CSRF protection from causing the tests to fail. You need to set this if you have CSRF protection enabled.
-- `"SERVER_NAME": "127.0.0.1:5000"` explicitly specifies the port as 5000 which supports tests with Selenium; otherwise the app may start on a port that is not 5000.
+
+To facilitate running the app for those using Windows, the create_app() function in the apps has been modified to accept configuration from a configuration class in a file called `config.py` in each app package/folder.
+
+The following is an example for the paralympics_app, for the iris_app change the package reference in the import.
 
 ```python
 import pytest
-from my_project import create_app
+from paralympic_app import create_app, config
 
 @pytest.fixture(scope="session")
 def app():
@@ -63,7 +66,7 @@ def app():
 
 
 @pytest.fixture(scope="function")
-def client(app):
+def test_client(app):
     """ Flask test client within an application context. """
     with app.test_client() as testing_client:
         # Establish an application context
@@ -71,9 +74,9 @@ def client(app):
             yield testing_client
 ```
 
-Add the fixtures shown aboce to a `conftest.py` file for the app you wish to test (`tests/tests_paralympics_app/conftest.py` or `tests/tests_iris_app/conftest.py`).
+Add the fixtures shown above to a `conftest.py` file for the app you wish to test (`tests/tests_paralympics_app/conftest.py` or `tests/tests_iris_app/conftest.py`).
 
-Note: Patrick Kennedy's code also has fixtures for creating a database and logging in a user which may be useful to some of you.
+Note: Patrick Kennedy's code also has fixtures for creating a database and logging in a user which may be useful.
 
 ## Writing the tests for routes
 
@@ -81,7 +84,7 @@ Some of the things you might test for in a route:
 
 - when a request is received, that the expected HTTP status code is returned
 - when a request is received, a particular element of value of an element is present on the page
-- when a request is received, if the route includes a redirect that the redirect is to the expected location
+- when a request is received, if the route includes a redirect, that the redirect is to the expected url
 - when a request is received, check that the form data is as expected
 - when a request is received that contains JSON data, check that the JSON is valid
 
@@ -99,7 +102,7 @@ Create a python file within the tests folder where you will place all the tests 
 Create the first test the paralympics app to test that when the '/noc' routes is requested that a '200' status code is returned (i.e. that the page was successfully returned).
 
 ```python
-def test_get_all_regions(client):
+def test_get_all_regions(test_client):
     """
     GIVEN a running Flask app
     WHEN an HTTP GET request is made to '/noc'
@@ -116,7 +119,7 @@ Some routes require you to pass data to them. For example a POST route to '/noc'
 This test has more complex logic as we need to check if the data is in the database first or not (a better approach would be to modify the route to handle the exception and to handle the rolling back of database errors between tests. Handling errors is covered in week 10, rolling back database changes between tests is not covered, however if you search you will find examples of fixtures that will do this).
 
 ```python
-def test_add_region(client):
+def test_add_region(test_client):
     """
     GIVEN a Region model
     WHEN the HTTP POST request is made to /noc
@@ -141,7 +144,8 @@ def test_add_region(client):
         db.session.execute(db.delete(Region).where(Region.NOC == region.NOC))
         db.session.commit()
 
-    # Count() is not well explained in the documentation, try https://github.com/sqlalchemy/sqlalchemy/issues/5908
+    # Count() is not well explained in the documentation, try
+    # https://github.com/sqlalchemy/sqlalchemy/issues/5908
     # Count the number of regions before adding a new one
     num_regions_in_db = db.session.scalar(
         db.select(db.func.count()).select_from(Region)
@@ -166,21 +170,21 @@ To run the tests (change the directory name to whatever you named them):
 Now try and write some of your own tests:
 
 ```python
-def test_get_all_regions(client):
+def test_get_all_regions(test_client):
     """
     GIVEN a running Flask app
     WHEN an HTTP GET request is made to '/noc'
     THEN the status code should be 200, the code 'AFG' should be in the response data and the content type "application/json"
     """
 
-def test_get_specific_region(client):
+def test_get_specific_region(test_client):
     """
     GIVEN a running Flask app
     WHEN the "/noc/<code>" route is requested with the GBR code
     THEN the response should contain the region UK
     """
 
-def test_delete_region(client):
+def test_delete_region(test_client):
     """
     GIVEN a region json AND the Region is in the database
     WHEN the DELETE "/noc/<code>" route is called
@@ -191,19 +195,28 @@ def test_delete_region(client):
 
 ### Iris app routes
 
-To run the tests: `python -m pytest -v tests/tests_iris_app/` replacing the directory name(s) with the name(s) you used.
+This assumes you've already created the fixture to run the app with a test client. The tests will fail otherwise.
+
+Create a test for the homepage in an appropriately named test file (e.g. `tests/tests_iris_app/test_routes.py`):
+
+```python
+def test_index_success(test_client):
+    """
+    GIVEN a running Flask app
+    WHEN an HTTP GET request is made to '/'
+    THEN the status code should be 200
+    AND the page should contain the the html <title>Iris Home</title>"
+    """
+    response = test_client.get("/")
+    assert response.status_code == 200
+    assert b"<title>Iris Home</title>" in response.data
+```
+
+To run the test: `python -m pytest -v tests/tests_iris_app/` replacing the directory name(s) with the name(s) you used.
 
 Use `python -m pytest -v tests/tests_iris_app/ --disable-warnings` if you don't want to keep seeing the package deprecation warnings.
 
 The tests take a while to run the first time.
-
-This assumes you've already created the fixture to run the app with a test client.
-
-Create a test for the homepage:
-
-```python
-@app.route("/", methods=["GET", "POST"])
-```
 
 For the second test, test that you can post a form on the page and get a prediction result.
 
@@ -214,7 +227,7 @@ You can pass values for the [form data to the request](https://flask.palletsproj
 Try the following:
 
 ```python
-def test_prediction_when_form_submitted(client):
+def test_prediction_when_form_submitted(test_client):
     """
     GIVEN a running Flask app
     WHEN an HTTP POST request is made to '/' with form data
@@ -235,7 +248,7 @@ def test_prediction_when_form_submitted(client):
 Now try and write the following tests yourself:
 
 ```python
-def test_iris_contains_table(client):
+def test_iris_contains_table(test_client):
     """
     GIVEN a running Flask app
     WHEN an HTTP GET request is made to '/iris'
@@ -244,7 +257,7 @@ def test_iris_contains_table(client):
     """
 
 
-def test_new_user_created_when_form_submitted(client):
+def test_new_user_created_when_form_submitted(test_client):
     """
     GIVEN a running Flask app
     WHEN an HTTP POST request is made to '/register' with valid form data for the email and password
@@ -254,7 +267,7 @@ def test_new_user_created_when_form_submitted(client):
     """
 
 
-def test_error_when_register_form_email_format_not_valid(client):
+def test_error_when_register_form_email_format_not_valid(test_client):
     """
     GIVEN a running Flask app
     WHEN an HTTP POST request is made to '/register' with form data where the email is not an email address format

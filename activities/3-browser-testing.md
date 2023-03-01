@@ -386,6 +386,7 @@ def test_register_link_from_nav(live_server, chrome_driver):
     """
     GIVEN a live_server with the iris predictor app
     WHEN the url for the homepage is entered
-    THEN the page title should equal "Iris Home"
+    WHEN the menu link for the register is clicked
+    THEN the current url should be that for the register page
     """
 ```

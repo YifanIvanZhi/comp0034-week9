@@ -18,7 +18,7 @@ Check you can run the apps:
 
 `python -m flask --app 'paralympic_app:create_app("paralympic_app.config.DevConfig")' --debug run`
 
-`python -m flask --app 'iris_app:create_app()' --debug run`
+`python -m flask --app 'iris_app:create_app("iris_app.config.DevConfig")' --debug run`
 
 ## Test directory structure
 

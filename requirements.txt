@@ -7,6 +7,6 @@ pytest
 selenium
 numpy
 requests
-pytest-flask
+# pytest-flask
 # scikit-learn
 # pandas

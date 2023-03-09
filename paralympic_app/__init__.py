@@ -22,7 +22,6 @@ def create_app(config_object):
     # Uses a helper function to initialise extensions
     initialize_extensions(app)
 
-    # Include the routes from routes.py
     with app.app_context():
         from paralympic_app import routes
         from paralympic_app.models import Event, Region
